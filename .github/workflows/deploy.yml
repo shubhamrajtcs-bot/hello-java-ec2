@@ -23,9 +23,10 @@ jobs:
         run: |
           pwd
           ls -la
-      
-      - name: Compile Java
-        run: javac HelloWorld.java
+      - name: Compile Java files 
+        run: javac *.java 
+      # - name: Compile Java
+      #   run: javac HelloWorld.java
 
       - name: Copy class file to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -33,7 +34,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          source: "HelloWorld.class"
+          source: "*.class"
+          # source: "HelloWorld.class"
           target: "/home/ec2-user/java-app"
 
       - name: Run Java on EC2
