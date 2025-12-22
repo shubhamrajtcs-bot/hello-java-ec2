@@ -22,14 +22,17 @@ jobs:
       - name: Build JAR with Maven
         run: mvn clean package
 
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Run JAR on EC2
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          source: "target/hello-java-ec2-1.0.jar"
-          target: "/home/ec2-user/java-app"
+          script: |
+            echo "Where am I?"
+            pwd
+            echo "Listing java-app:"
+            ls -R /home/ec2-user/java-app
       
       - name: Run JAR on EC2
         uses: appleboy/ssh-action@v1.0.3
