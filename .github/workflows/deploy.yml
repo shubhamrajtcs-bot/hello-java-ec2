@@ -10,30 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Setup Java 17
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3. Build JAR using Maven
       - name: Build JAR with Maven
         run: mvn clean package
 
-      - name: Run JAR on EC2
-        uses: appleboy/ssh-action@v1.0.3
+      # 4. Copy JAR to EC2 (place it directly in java-app)
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "Where am I?"
-            pwd
-            echo "Listing java-app:"
-            ls -R /home/ec2-user/java-app
-      
+          source: "target/hello-java-ec2-1.0.jar"
+          target: "/home/ec2-user/java-app"
+          strip_components: 1
+
+      # 5. Run JAR on EC2
       - name: Run JAR on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -42,5 +45,5 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd /home/ec2-user/java-app
+            ls -l
             java -jar hello-java-ec2-1.0.jar
-                  java -jar hello-java-ec2-1.0.jar
