@@ -1,4 +1,4 @@
-name: Java CI/CD to EC2
+name: Java CI/CD to EC2 via S3 and SSM
 
 on:
   push:
@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source code
+      # 1. Checkout source code from GitHub
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Java 17
+      # 2. Install Java 17 on GitHub runner
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -25,25 +25,30 @@ jobs:
       - name: Build JAR with Maven
         run: mvn clean package
 
-      # 4. Copy JAR to EC2 (place it directly in java-app)
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
+      # 4. Configure AWS credentials for GitHub Actions
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          source: "target/hello-java-ec2-1.0.jar"
-          target: "/home/ec2-user/java-app"
-          strip_components: 1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # 5. Run JAR on EC2
-      - name: Run JAR on EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            cd /home/ec2-user/java-app
-            ls -l
-            java -jar hello-java-ec2-1.0.jar
+      # 5. Upload JAR to Amazon S3
+      - name: Upload JAR to S3
+        run: |
+          aws s3 cp target/hello-java-ec2-1.0.jar \
+          s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.jar
+
+      # 6. Deploy to EC2 using AWS Systems Manager (SSM)
+      - name: Deploy to EC2 using SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy Java app from S3 using SSM" \
+            --parameters commands='[
+              "mkdir -p /home/ec2-user/java-app",
+              "aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.jar /home/ec2-user/java-app/",
+              "cd /home/ec2-user/java-app",
+              "java -jar hello-java-ec2-1.0.jar"
+            ]'
