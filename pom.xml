@@ -8,8 +8,6 @@
     <groupId>com.example</groupId>
     <artifactId>hello-java-ec2</artifactId>
     <version>1.0</version>
-
-    <!-- 🔴 CHANGED: jar → war -->
     <packaging>war</packaging>
 
     <properties>
@@ -17,7 +15,6 @@
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
-    <!-- ✅ Servlet API required by Tomcat -->
     <dependencies>
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -29,10 +26,6 @@
 
     <build>
         <plugins>
-
-            <!-- ❌ REMOVED: maven-jar-plugin -->
-
-            <!-- ✅ REQUIRED for WAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -40,13 +33,6 @@
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
-            </plugin>
-
-        </plugins>
-    </build>
-
-</project>
-
             </plugin>
         </plugins>
     </build>
