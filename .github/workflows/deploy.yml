@@ -1,57 +1,57 @@
-name: Java CI/CD to EC2 via S3 and SSM
+name: Java CI/CD to EC2 via S3 and SSM (Tomcat)
 
 on:
   push:
     branches:
       - main
+
 permissions:
-  id-token: write   # REQUIRED for OIDC
+  id-token: write     # REQUIRED for OIDC
   contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source code from GitHub
+      # 1. Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Install Java 17 on GitHub runner
+      # 2. Setup Java 17 on GitHub Runner
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. Build JAR using Maven
-      - name: Build JAR with Maven
+      # 3. Build WAR using Maven
+      - name: Build WAR with Maven
         run: mvn clean package
 
-      # 4. Configure AWS credentials for GitHub Actions
+      # 4. Configure AWS credentials using OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: arn:aws:iam::712490755516:role/OICDrole
 
-      # 5. Upload JAR to Amazon S3
-      - name: Upload JAR to S3
+      # 5. Upload WAR to Amazon S3
+      - name: Upload WAR to S3
         run: |
-          aws s3 cp target/hello-java-ec2-1.0.jar \
-          s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.jar
+          aws s3 cp target/hello-java-ec2-1.0.war \
+          s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.war
 
-      # 6. Deploy to EC2 using AWS Systems Manager (SSM)
-      - name: Deploy to EC2 using SSM
+      # 6. Deploy WAR to Tomcat using AWS Systems Manager
+      - name: Deploy WAR to Tomcat using SSM
         run: |
           aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --comment "Deploy Java app from S3 using SSM" \
+            --comment "Deploy WAR to Tomcat using SSM" \
             --parameters commands='[
-              "mkdir -p /home/ec2-user/java-app",
-              "aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.jar /home/ec2-user/java-app/",
-              "cd /home/ec2-user/java-app",
-              "java -jar hello-java-ec2-1.0.jar"
+              "rm -rf /opt/tomcat/webapps/hello-java-ec2*",
+              "aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/hello-java-ec2-1.0.war /opt/tomcat/webapps/",
+              "/opt/tomcat/bin/shutdown.sh || true",
+              "/opt/tomcat/bin/startup.sh"
             ]'
