@@ -3,7 +3,7 @@ name: Java 8 deployment
 on:
     push:
       branches: 
-        -main
+         -main
     workflow_dispatch: #<-- munual trigger
     
 jobs:
@@ -17,12 +17,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 8
-          chache: maven
+          cache: maven
       - name: Check Java version
         run : java -version
         
       - name: Build Project
-        run: mvn pakage 
+        run: mvn package 
       - name: upload artifact
         uses : actions/upload-artifact@v4
         with:
