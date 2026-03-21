@@ -24,7 +24,7 @@ jobs:
       - name: Build Project
         run: mvn pakage 
       - name: upload artifact
-        uses : actions/ upload-artifact@v4
+        uses : actions/upload-artifact@v4
         with:
           name: java-artifact
           path: target/*.jar     
